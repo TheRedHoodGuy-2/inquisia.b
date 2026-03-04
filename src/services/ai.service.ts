@@ -16,7 +16,7 @@ if (!process.env.GEMINI_API_KEY) {
     embeddingModel = mockModel;
 } else {
     genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-    model = genAI.getGenerativeModel({ model: "gemma-3-27b-it" });
+    model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     embeddingModel = genAI.getGenerativeModel({ model: "gemini-embedding-001" });
 }
 
