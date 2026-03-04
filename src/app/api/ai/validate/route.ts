@@ -1,52 +1,23 @@
 import { NextResponse } from "next/server";
+const pdfParse = require("pdf-parse");
 import { requireAuth } from "@/lib/session";
 import { AIService } from "@/services/ai.service";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { calculatePlagiarismScore } from "@/lib/plagiarism";
 
-// ── CORS helper ──────────────────────────────────────────────────────────────
-// Returns CORS headers as a plain Record<string, string> (always defined values).
-function corsHeaders(origin: string | null): Record<string, string> {
-    const allowed: string[] = [
-        "http://localhost:5173",
-        "http://localhost:3000",
-        ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []),
-    ];
-
-    const isAllowed =
-        !!origin &&
-        (allowed.includes(origin) ||
-            /^https:\/\/[a-z0-9-]+\.vercel\.app$/.test(origin));
-
-    if (!isAllowed) return {};
-
-    return {
-        "Access-Control-Allow-Origin": origin!,
-        "Access-Control-Allow-Credentials": "true",
-        "Access-Control-Allow-Methods": "GET,OPTIONS,PATCH,DELETE,POST,PUT",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With",
-    };
-}
-
-// ── CORS preflight ───────────────────────────────────────────────────────────
-export async function OPTIONS(request: Request) {
-    const origin = request.headers.get("origin");
-    return new NextResponse(null, { status: 204, headers: corsHeaders(origin) });
-}
-
-// ── Timeout helper ───────────────────────────────────────────────────────────
+// ── Timeout helper ──────────────────────────────────────────────────────────
+// Races any promise against a timeout so Netlify never hard-kills the function
+// and returns a raw "Internal Server Error" plain-text response.
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null> {
     return Promise.race([
         promise,
-        new Promise<null>(resolve => setTimeout(() => resolve(null), ms)),
+        new Promise<null>(resolve => setTimeout(() => resolve(null), ms))
     ]);
 }
 
-// ── Main handler ─────────────────────────────────────────────────────────────
 export async function POST(request: Request) {
-    const origin = request.headers.get("origin");
-
     try {
+        // Only authenticated users can use the AI validation endpoint
         await requireAuth();
 
         const formData = await request.formData();
@@ -55,108 +26,81 @@ export async function POST(request: Request) {
         const file = formData.get("file") as File | null;
 
         if (!title || !abstract) {
-            return NextResponse.json(
-                { success: false, error: "Title and abstract are required for validation" },
-                { status: 400, headers: corsHeaders(origin) }
-            );
+            return NextResponse.json({ success: false, error: "Title and abstract are required for validation" }, { status: 400 });
         }
 
         if (abstract.length < 50) {
-            return NextResponse.json(
-                { success: false, error: "Abstract must be at least 50 characters for AI analysis" },
-                { status: 400, headers: corsHeaders(origin) }
-            );
+            return NextResponse.json({ success: false, error: "Abstract must be at least 50 characters for AI analysis" }, { status: 400 });
         }
 
-        // Prioritize pre-extracted PDF text from the client if provided
-        let pdfText = formData.get("pdfText") as string || "";
-        let pdfParseError: string | undefined;
-
-        // Only try server-side parsing if the client-side extraction failed or wasn't provided
-        if (!pdfText && file) {
+        // 1. Conditionally parse the PDF if provided
+        let pdfText = "";
+        if (file) {
             try {
-                // eslint-disable-next-line @typescript-eslint/no-require-imports
-                const pdfParse = require("pdf-parse");
                 const arrayBuffer = await file.arrayBuffer();
                 const buffer = Buffer.from(arrayBuffer);
-
-                // Resolve parser — handles both pdf-parse v1 (function) and v2 (class-based)
-                const parserClass = typeof pdfParse === "function"
-                    ? pdfParse
-                    : (pdfParse.PDFParse || pdfParse.default || pdfParse);
-
-                if (
-                    typeof parserClass === "function" &&
-                    (parserClass.toString().includes("class") || parserClass.name === "PDFParse")
-                ) {
-                    // Class-based API (pdf-parse v2)
-                    const instance = new parserClass({ data: buffer });
-                    const result = await instance.getText();
-                    pdfText = result.text ?? "";
-                } else if (typeof parserClass === "function") {
-                    // Function-based API (pdf-parse v1 / standard)
-                    const pdfData = await parserClass(buffer);
-                    pdfText = pdfData.text ?? "";
+                const { PDFParse } = pdfParse as any;
+                if (PDFParse) {
+                    const parser = new PDFParse({ data: buffer });
+                    const result = await parser.getText();
+                    pdfText = result.text;
                 } else {
-                    throw new Error(`PDF parser type unresolved: ${typeof parserClass}`);
+                    const parse = typeof pdfParse === "function" ? pdfParse : (pdfParse as any).default;
+                    const data = await parse(buffer);
+                    pdfText = data.text;
                 }
-            } catch (err: any) {
-                // Log clearly — this is NOT a silent failure so we can debug in Vercel logs
-                console.error("[VALIDATE] PDF parse failed:", err?.message ?? err);
-                pdfParseError = err?.message ?? "PDF could not be read";
+            } catch (err) {
+                console.warn("Failed to parse PDF during validation:", err);
             }
         }
 
+        // Fetch available categories from the database to guide the AI
         const { data: categoriesData } = await supabaseAdmin.from("ai_categories").select("name");
         const availableCategories = categoriesData?.map(c => c.name) || [];
 
-        // Run AI + plagiarism with timeouts so we always return JSON before Vercel cuts us off
+        // 2. Run AI + plagiarism with an 8-second timeout.
+        // If gemma takes too long, we return a safe default so the user can still upload.
+        // Netlify hard-kills functions at 10s and returns plain text — this prevents that.
         const aiResult = await withTimeout(
             AIService.generateProjectMetadata({ title, abstract, pdfText }, availableCategories),
-            50000 // 50s — Vercel Hobby gives 60s total
+            8000
         );
 
         const plagiarismResult = pdfText
-            ? await withTimeout(calculatePlagiarismScore(pdfText), 8000)
+            ? await withTimeout(calculatePlagiarismScore(pdfText), 4000)
             : null;
 
+        // If AI timed out, return a permissive default so the upload can still proceed
         const aiMetadata = aiResult ?? {
             valid: true,
             category: availableCategories[0] ?? "General",
             tags: ["Research", "Academic"],
-            message: "Elara is taking longer than usual. You can proceed — a supervisor will review your submission.",
+            message: "Elara is taking longer than usual. You can still proceed — a supervisor will review your submission.",
             suggested_prompt: null,
         };
 
-        return NextResponse.json(
-            {
-                success: true,
-                data: {
-                    valid: aiMetadata.valid,
-                    category: aiMetadata.category,
-                    tags: aiMetadata.tags,
-                    message: aiMetadata.message || "AI analysis complete.",
-                    suggested_prompt: aiMetadata.suggested_prompt,
-                    pdfText: pdfText || undefined,
-                    pdfParseError: pdfParseError || undefined,
-                    plagiarismData: plagiarismResult || undefined,
-                },
-            },
-            { headers: corsHeaders(origin) }
-        );
+        return NextResponse.json({
+            success: true,
+            data: {
+                valid: aiMetadata.valid,
+                category: aiMetadata.category,
+                tags: aiMetadata.tags,
+                message: aiMetadata.message || "AI analysis complete. These are our suggested classifications.",
+                suggested_prompt: aiMetadata.suggested_prompt,
+                pdfText: pdfText || undefined,
+                plagiarismData: plagiarismResult || undefined
+            }
+        });
     } catch (error: any) {
         console.error("AI Validation API Error:", error);
 
         if (error.message === "Unauthorized") {
-            return NextResponse.json(
-                { success: false, error: "Unauthorized" },
-                { status: 401, headers: corsHeaders(origin) }
-            );
+            return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
         }
 
-        return NextResponse.json(
-            { success: false, error: "Elara is having trouble right now. You can still proceed with submission." },
-            { status: 500, headers: corsHeaders(origin) }
-        );
+        return NextResponse.json({
+            success: false,
+            error: "Elara is sleeping or having trouble analyzing your project right now. You can still proceed with submission."
+        }, { status: 500 });
     }
 }
