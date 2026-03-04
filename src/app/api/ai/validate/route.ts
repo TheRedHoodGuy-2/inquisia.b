@@ -5,6 +5,16 @@ import { AIService } from "@/services/ai.service";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { calculatePlagiarismScore } from "@/lib/plagiarism";
 
+// ── Timeout helper ──────────────────────────────────────────────────────────
+// Races any promise against a timeout so Netlify never hard-kills the function
+// and returns a raw "Internal Server Error" plain-text response.
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null> {
+    return Promise.race([
+        promise,
+        new Promise<null>(resolve => setTimeout(() => resolve(null), ms))
+    ]);
+}
+
 export async function POST(request: Request) {
     try {
         // Only authenticated users can use the AI validation endpoint
@@ -48,17 +58,26 @@ export async function POST(request: Request) {
         const { data: categoriesData } = await supabaseAdmin.from("ai_categories").select("name");
         const availableCategories = categoriesData?.map(c => c.name) || [];
 
-        // Run the AI metadata generation logic
-        const aiMetadata = await AIService.generateProjectMetadata(
-            { title, abstract, pdfText },
-            availableCategories
+        // 2. Run AI + plagiarism with an 8-second timeout.
+        // If gemma takes too long, we return a safe default so the user can still upload.
+        // Netlify hard-kills functions at 10s and returns plain text — this prevents that.
+        const aiResult = await withTimeout(
+            AIService.generateProjectMetadata({ title, abstract, pdfText }, availableCategories),
+            8000
         );
 
-        // Pre-calculate Plagiarism / Similarity matching so the UI can warn the user
-        let plagiarismData = null;
-        if (pdfText) {
-            plagiarismData = await calculatePlagiarismScore(pdfText);
-        }
+        const plagiarismResult = pdfText
+            ? await withTimeout(calculatePlagiarismScore(pdfText), 4000)
+            : null;
+
+        // If AI timed out, return a permissive default so the upload can still proceed
+        const aiMetadata = aiResult ?? {
+            valid: true,
+            category: availableCategories[0] ?? "General",
+            tags: ["Research", "Academic"],
+            message: "Elara is taking longer than usual. You can still proceed — a supervisor will review your submission.",
+            suggested_prompt: null,
+        };
 
         return NextResponse.json({
             success: true,
@@ -69,7 +88,7 @@ export async function POST(request: Request) {
                 message: aiMetadata.message || "AI analysis complete. These are our suggested classifications.",
                 suggested_prompt: aiMetadata.suggested_prompt,
                 pdfText: pdfText || undefined,
-                plagiarismData: plagiarismData || undefined
+                plagiarismData: plagiarismResult || undefined
             }
         });
     } catch (error: any) {
