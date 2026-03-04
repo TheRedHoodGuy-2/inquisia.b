@@ -1,14 +1,11 @@
 import { NextResponse } from "next/server";
-// @ts-ignore
-import pdfParse from "pdf-parse";
 import { requireAuth } from "@/lib/session";
 import { AIService } from "@/services/ai.service";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { calculatePlagiarismScore } from "@/lib/plagiarism";
+import { extractPdfText } from "@/lib/pdf";
 
 // ── Timeout helper ──────────────────────────────────────────────────────────
-// Races any promise against a timeout so Netlify never hard-kills the function
-// and returns a raw "Internal Server Error" plain-text response.
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null> {
     return Promise.race([
         promise,
@@ -40,16 +37,7 @@ export async function POST(request: Request) {
             try {
                 const arrayBuffer = await file.arrayBuffer();
                 const buffer = Buffer.from(arrayBuffer);
-                const { PDFParse } = pdfParse as any;
-                if (PDFParse) {
-                    const parser = new PDFParse({ data: buffer });
-                    const result = await parser.getText();
-                    pdfText = result.text;
-                } else {
-                    const parse = typeof pdfParse === "function" ? pdfParse : (pdfParse as any).default;
-                    const data = await parse(buffer);
-                    pdfText = data.text;
-                }
+                pdfText = await extractPdfText(buffer);
             } catch (err) {
                 console.warn("Failed to parse PDF during validation:", err);
             }
@@ -59,9 +47,7 @@ export async function POST(request: Request) {
         const { data: categoriesData } = await supabaseAdmin.from("ai_categories").select("name");
         const availableCategories = categoriesData?.map(c => c.name) || [];
 
-        // 2. Run AI + plagiarism with an 8-second timeout.
-        // If gemma takes too long, we return a safe default so the user can still upload.
-        // Netlify hard-kills functions at 10s and returns plain text — this prevents that.
+        // 2. Run AI + plagiarism with a timeout.
         const aiResult = await withTimeout(
             AIService.generateProjectMetadata({ title, abstract, pdfText }, availableCategories),
             8000

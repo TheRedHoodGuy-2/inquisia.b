@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-// @ts-ignore
-import pdfParse from "pdf-parse";
 import { requireAuth } from "@/lib/session";
+import { extractPdfText } from "@/lib/pdf";
 
 export async function POST(request: Request) {
     try {
@@ -15,27 +14,11 @@ export async function POST(request: Request) {
             return NextResponse.json({ success: false, error: "A valid PDF file is required" }, { status: 400 });
         }
 
-        // Parse PDF Native Text
         let pdfText = "";
         try {
             const arrayBuffer = await file.arrayBuffer();
             const buffer = Buffer.from(arrayBuffer);
-
-            // Resolve the parser - Version 2 (Mehmet Kozan) uses a class-based API
-            const parserClass = typeof pdfParse === 'function' ? pdfParse : (pdfParse.PDFParse || pdfParse.default || pdfParse);
-
-            if (typeof parserClass === 'function' && (parserClass.toString().includes('class') || parserClass.name === 'PDFParse')) {
-                // Class-based API (v2)
-                const instance = new parserClass({ data: buffer });
-                const result = await instance.getText();
-                pdfText = result.text;
-            } else if (typeof parserClass === 'function') {
-                // Function-based API (v1 / standard)
-                const pdfData = await parserClass(buffer);
-                pdfText = pdfData.text;
-            } else {
-                throw new Error(`PDF parser initialization failed: resolved type is ${typeof parserClass}`);
-            }
+            pdfText = await extractPdfText(buffer);
         } catch (parseError: any) {
             console.error("PDF Parsing failed during extraction:", parseError);
             return NextResponse.json({

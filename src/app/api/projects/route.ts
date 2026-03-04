@@ -7,8 +7,7 @@ import { AIService } from "@/services/ai.service";
 import { projectSubmissionSchema } from "@/schemas";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { NotificationService } from "@/services/notification.service";
-// @ts-ignore
-import pdfParse from "pdf-parse";
+import { extractPdfText } from "@/lib/pdf";
 
 export async function GET() {
     try {
@@ -76,21 +75,7 @@ export async function POST(request: Request) {
         let pdfText = metadataRaw.pdfText || "";
         if (!pdfText) {
             try {
-                // Resolve the parser - Version 2 (Mehmet Kozan) uses a class-based API
-                const parserClass = typeof pdfParse === 'function' ? pdfParse : (pdfParse.PDFParse || pdfParse.default || pdfParse);
-
-                if (typeof parserClass === 'function' && (parserClass.toString().includes('class') || parserClass.name === 'PDFParse')) {
-                    // Class-based API (v2)
-                    const instance = new parserClass({ data: buffer });
-                    const result = await instance.getText();
-                    pdfText = result.text;
-                } else if (typeof parserClass === 'function') {
-                    // Function-based API (v1 / standard)
-                    const pdfData = await parserClass(buffer);
-                    pdfText = pdfData.text;
-                } else {
-                    throw new Error(`PDF parser initialization failed: resolved type is ${typeof parserClass}`);
-                }
+                pdfText = await extractPdfText(buffer);
             } catch (parseError: any) {
                 console.error("PDF Parsing failed:", parseError);
                 return NextResponse.json({
