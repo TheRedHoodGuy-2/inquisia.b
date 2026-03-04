@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-const pdfParse = require("pdf-parse");
+// @ts-ignore
+import pdfParse from "pdf-parse";
 import { requireAuth } from "@/lib/session";
 import { AIService } from "@/services/ai.service";
 import { supabaseAdmin } from "@/lib/supabase-admin";

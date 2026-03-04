@@ -7,7 +7,8 @@ import { AIService } from "@/services/ai.service";
 import { projectSubmissionSchema } from "@/schemas";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { NotificationService } from "@/services/notification.service";
-const pdfParse = require("pdf-parse");
+// @ts-ignore
+import pdfParse from "pdf-parse";
 
 export async function GET() {
     try {

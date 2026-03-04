@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-const pdfParse = require("pdf-parse");
+// @ts-ignore
+import pdfParse from "pdf-parse";
 import { requireAuth } from "@/lib/session";
 
 export async function POST(request: Request) {
