@@ -68,28 +68,41 @@ export async function POST(request: Request) {
             );
         }
 
-        // Parse PDF — require() is inside the function body intentionally.
-        // A top-level require() in a Next.js ES module crashes the entire route
-        // on Vercel before any try/catch, returning an empty 500 body.
+        // Parse PDF — require() inside function body to avoid ESM top-level crash on Vercel.
+        // Uses the same proven detection logic as projects/route.ts.
         let pdfText = "";
+        let pdfParseError: string | undefined;
         if (file) {
             try {
                 // eslint-disable-next-line @typescript-eslint/no-require-imports
                 const pdfParse = require("pdf-parse");
                 const arrayBuffer = await file.arrayBuffer();
                 const buffer = Buffer.from(arrayBuffer);
-                const { PDFParse } = pdfParse as any;
-                if (PDFParse) {
-                    const parser = new PDFParse({ data: buffer });
-                    const result = await parser.getText();
-                    pdfText = result.text;
+
+                // Resolve parser — handles both pdf-parse v1 (function) and v2 (class-based)
+                const parserClass = typeof pdfParse === "function"
+                    ? pdfParse
+                    : (pdfParse.PDFParse || pdfParse.default || pdfParse);
+
+                if (
+                    typeof parserClass === "function" &&
+                    (parserClass.toString().includes("class") || parserClass.name === "PDFParse")
+                ) {
+                    // Class-based API (pdf-parse v2)
+                    const instance = new parserClass({ data: buffer });
+                    const result = await instance.getText();
+                    pdfText = result.text ?? "";
+                } else if (typeof parserClass === "function") {
+                    // Function-based API (pdf-parse v1 / standard)
+                    const pdfData = await parserClass(buffer);
+                    pdfText = pdfData.text ?? "";
                 } else {
-                    const parse = typeof pdfParse === "function" ? pdfParse : (pdfParse as any).default;
-                    const data = await parse(buffer);
-                    pdfText = data.text;
+                    throw new Error(`PDF parser type unresolved: ${typeof parserClass}`);
                 }
-            } catch (err) {
-                console.warn("Failed to parse PDF during validation:", err);
+            } catch (err: any) {
+                // Log clearly — this is NOT a silent failure so we can debug in Vercel logs
+                console.error("[VALIDATE] PDF parse failed:", err?.message ?? err);
+                pdfParseError = err?.message ?? "PDF could not be read";
             }
         }
 
@@ -124,6 +137,7 @@ export async function POST(request: Request) {
                     message: aiMetadata.message || "AI analysis complete.",
                     suggested_prompt: aiMetadata.suggested_prompt,
                     pdfText: pdfText || undefined,
+                    pdfParseError: pdfParseError || undefined,
                     plagiarismData: plagiarismResult || undefined,
                 },
             },
