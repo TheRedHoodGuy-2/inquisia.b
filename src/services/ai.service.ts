@@ -282,7 +282,7 @@ export class AIService {
             1. TITLE QUALITY: Is the title professional and academic? Reject "test", "ass", gibberish, placeholders, or obvious typos.
             2. ABSTRACT QUALITY: Is the abstract a proper research summary (min 50 chars)? Reject gibberish or obvious typos.
             3. CONTEXTUAL CONNECTIVITY: Do the title and abstract connect on the same research context? The abstract MUST validate the title and vice versa.
-            ${project.pdfText ? `4. PDF CONTENT VALIDATION: Ensure the abstract DOES NOT deviate from the core paper logic provided in the PDF text. Highlight major discrepancies as validation failures.` : ""}
+            ${project.pdfText ? `4. PDF CONTENT CHECK (WARNING ONLY — does NOT affect valid field): Compare the abstract against the PDF content. If there is a significant mismatch, add a note in the "message" field like "⚠️ Note: Your abstract may not fully reflect your PDF content. Your supervisor will review." but KEEP "valid" as true.` : ""}
             5. TAG RELEVANCE: Generate 2-15 technical tags that connect appropriately with the title, abstract, and paper content.
             6. CATEGORY MATCH: Select exactly ONE category from the list below that matches the research domain.
 
@@ -291,7 +291,7 @@ export class AIService {
             ${project.pdfText ? `PDF CONTENT (First 15k chars): ${project.pdfText.substring(0, 15000)}` : ""}
             AVAILABLE CATEGORIES: ${availableCategories.join(", ")}
 
-            REJECTION RULE: If rules 1, 2, or 3 are violated, set "valid" to false and provide a clear, helpful "message" explaining why.
+            REJECTION RULE: ONLY set "valid" to false if rules 1, 2, or 3 are violated. Rule 4 (PDF mismatch) NEVER causes a rejection — it only adds a warning to "message".
             SUGGESTED PROMPT RULE: If "valid" is false, ALSO provide a "suggested_prompt" that the user can send to Elara (our AI assistant) to help them fix the issue.
             Example for a bad title but good abstract: "Elara, here is my abstract: [abstract snippets]. Can you help me write a better title?"
 
