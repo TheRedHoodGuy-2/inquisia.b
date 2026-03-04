@@ -71,30 +71,32 @@ export async function POST(request: Request) {
             return NextResponse.json({ success: false, error: uploadError.message }, { status: 400 });
         }
 
-        // Parse PDF Native Text
-        let pdfText = "";
-        try {
-            // Resolve the parser - Version 2 (Mehmet Kozan) uses a class-based API
-            const parserClass = typeof pdfParse === 'function' ? pdfParse : (pdfParse.PDFParse || pdfParse.default || pdfParse);
+        // 4. Parse PDF Native Text (skip if frontend already extracted it)
+        let pdfText = metadataRaw.pdfText || "";
+        if (!pdfText) {
+            try {
+                // Resolve the parser - Version 2 (Mehmet Kozan) uses a class-based API
+                const parserClass = typeof pdfParse === 'function' ? pdfParse : (pdfParse.PDFParse || pdfParse.default || pdfParse);
 
-            if (typeof parserClass === 'function' && (parserClass.toString().includes('class') || parserClass.name === 'PDFParse')) {
-                // Class-based API (v2)
-                const instance = new parserClass({ data: buffer });
-                const result = await instance.getText();
-                pdfText = result.text;
-            } else if (typeof parserClass === 'function') {
-                // Function-based API (v1 / standard)
-                const pdfData = await parserClass(buffer);
-                pdfText = pdfData.text;
-            } else {
-                throw new Error(`PDF parser initialization failed: resolved type is ${typeof parserClass}`);
+                if (typeof parserClass === 'function' && (parserClass.toString().includes('class') || parserClass.name === 'PDFParse')) {
+                    // Class-based API (v2)
+                    const instance = new parserClass({ data: buffer });
+                    const result = await instance.getText();
+                    pdfText = result.text;
+                } else if (typeof parserClass === 'function') {
+                    // Function-based API (v1 / standard)
+                    const pdfData = await parserClass(buffer);
+                    pdfText = pdfData.text;
+                } else {
+                    throw new Error(`PDF parser initialization failed: resolved type is ${typeof parserClass}`);
+                }
+            } catch (parseError: any) {
+                console.error("PDF Parsing failed:", parseError);
+                return NextResponse.json({
+                    success: false,
+                    error: `Failed to read PDF content: ${parseError.message || "Unknown error"}. Please ensure it is a valid, unencrypted PDF.`
+                }, { status: 400 });
             }
-        } catch (parseError: any) {
-            console.error("PDF Parsing failed:", parseError);
-            return NextResponse.json({
-                success: false,
-                error: `Failed to read PDF content: ${parseError.message || "Unknown error"}. Please ensure it is a valid, unencrypted PDF.`
-            }, { status: 400 });
         }
 
         // 5. System Analysis

@@ -24,6 +24,7 @@ export async function POST(request: Request) {
         const title = formData.get("title") as string;
         const abstract = formData.get("abstract") as string;
         const file = formData.get("file") as File | null;
+        let pdfText = formData.get("pdfText") as string || ""; // Read pre-extracted text first
 
         if (!title || !abstract) {
             return NextResponse.json({ success: false, error: "Title and abstract are required for validation" }, { status: 400 });
@@ -33,9 +34,8 @@ export async function POST(request: Request) {
             return NextResponse.json({ success: false, error: "Abstract must be at least 50 characters for AI analysis" }, { status: 400 });
         }
 
-        // 1. Conditionally parse the PDF if provided
-        let pdfText = "";
-        if (file) {
+        // 1. Conditionally parse the PDF if provided AND text wasn't already passed
+        if (file && !pdfText) {
             try {
                 const arrayBuffer = await file.arrayBuffer();
                 const buffer = Buffer.from(arrayBuffer);
