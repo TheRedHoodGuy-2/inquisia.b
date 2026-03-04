@@ -1,0 +1,35 @@
+{
+  "keys": [
+    "id",
+    "title",
+    "abstract",
+    "pdf_text",
+    "report_url",
+    "github_url",
+    "live_url",
+    "presentation_url",
+    "status",
+    "plagiarism_score",
+    "plagiarism_flagged",
+    "ai_category",
+    "student_tags",
+    "ai_summary",
+    "ai_limitations",
+    "downloads",
+    "year",
+    "department_id",
+    "supervisor_id",
+    "uploaded_by",
+    "supervisor_feedback",
+    "version",
+    "parent_project_id",
+    "created_at",
+    "updated_at"
+  ],
+  "insertErr": {
+    "code": "PGRST204",
+    "details": null,
+    "hint": null,
+    "message": "Could not find the 'ai_tags' column of 'projects' in the schema cache"
+  }
+}

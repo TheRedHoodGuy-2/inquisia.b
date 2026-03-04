@@ -1,0 +1,330 @@
+{
+  "departments": [
+    {
+      "id": "e3875e47-0d97-4070-9bac-c0adb175f2a0",
+      "name": "Computer Science",
+      "school": "School of Computing and Engineering Sciences",
+      "created_at": "2026-02-21T08:59:10.635735+00:00"
+    },
+    {
+      "id": "b14d6c70-9e86-4770-b51c-c10580a4b3e4",
+      "name": "Computer Information Systems",
+      "school": "School of Computing and Engineering Sciences",
+      "created_at": "2026-02-21T08:59:10.635735+00:00"
+    },
+    {
+      "id": "8dcc8cd9-b48d-41e9-bf10-b8421b8b64fc",
+      "name": "Computer Technology",
+      "school": "School of Computing and Engineering Sciences",
+      "created_at": "2026-02-21T08:59:10.635735+00:00"
+    },
+    {
+      "id": "095c4247-a783-45c6-b017-84d7d9212a08",
+      "name": "Software Engineering",
+      "school": "School of Computing and Engineering Sciences",
+      "created_at": "2026-02-21T08:59:10.635735+00:00"
+    },
+    {
+      "id": "9f5b6764-4405-4482-b4f9-0f7366ce7be0",
+      "name": "Information Technology",
+      "school": "School of Computing and Engineering Sciences",
+      "created_at": "2026-02-21T08:59:10.635735+00:00"
+    }
+  ],
+  "users": [
+    {
+      "email": "qa@babcock.edu.ng",
+      "role": "supervisor",
+      "department_id": "e3875e47-0d97-4070-9bac-c0adb175f2a0",
+      "is_verified": true
+    },
+    {
+      "email": "admin@inquisia.babcock.edu.ng",
+      "role": "admin",
+      "department_id": null,
+      "is_verified": true
+    },
+    {
+      "email": "staff1771717882083@babcock.edu.ng",
+      "role": "supervisor",
+      "department_id": "b14d6c70-9e86-4770-b51c-c10580a4b3e4",
+      "is_verified": false
+    },
+    {
+      "email": "test@babcock.edu.ng",
+      "role": "supervisor",
+      "department_id": "e3875e47-0d97-4070-9bac-c0adb175f2a0",
+      "is_verified": true
+    },
+    {
+      "email": "sarah.sup@babcock.edu.ng",
+      "role": "supervisor",
+      "department_id": "b14d6c70-9e86-4770-b51c-c10580a4b3e4",
+      "is_verified": false
+    },
+    {
+      "email": "staff1771717201942@babcock.edu.ng",
+      "role": "supervisor",
+      "department_id": "b14d6c70-9e86-4770-b51c-c10580a4b3e4",
+      "is_verified": false
+    },
+    {
+      "email": "staff1771717284763@babcock.edu.ng",
+      "role": "supervisor",
+      "department_id": "b14d6c70-9e86-4770-b51c-c10580a4b3e4",
+      "is_verified": false
+    },
+    {
+      "email": "staff1771717365240@babcock.edu.ng",
+      "role": "supervisor",
+      "department_id": "b14d6c70-9e86-4770-b51c-c10580a4b3e4",
+      "is_verified": false
+    },
+    {
+      "email": "staff1771717454883@babcock.edu.ng",
+      "role": "supervisor",
+      "department_id": "b14d6c70-9e86-4770-b51c-c10580a4b3e4",
+      "is_verified": false
+    },
+    {
+      "email": "staff1771717543022@babcock.edu.ng",
+      "role": "supervisor",
+      "department_id": "b14d6c70-9e86-4770-b51c-c10580a4b3e4",
+      "is_verified": false
+    },
+    {
+      "email": "staff1771717943424@babcock.edu.ng",
+      "role": "supervisor",
+      "department_id": "b14d6c70-9e86-4770-b51c-c10580a4b3e4",
+      "is_verified": false
+    },
+    {
+      "email": "staff1771718016731@babcock.edu.ng",
+      "role": "supervisor",
+      "department_id": "b14d6c70-9e86-4770-b51c-c10580a4b3e4",
+      "is_verified": false
+    },
+    {
+      "email": "staff1771718218177@babcock.edu.ng",
+      "role": "supervisor",
+      "department_id": "b14d6c70-9e86-4770-b51c-c10580a4b3e4",
+      "is_verified": false
+    },
+    {
+      "email": "staff1771718679934@babcock.edu.ng",
+      "role": "supervisor",
+      "department_id": "b14d6c70-9e86-4770-b51c-c10580a4b3e4",
+      "is_verified": false
+    },
+    {
+      "email": "staff1771718708734@babcock.edu.ng",
+      "role": "supervisor",
+      "department_id": "b14d6c70-9e86-4770-b51c-c10580a4b3e4",
+      "is_verified": false
+    },
+    {
+      "email": "test@student.babcock.edu.ng",
+      "role": "student",
+      "department_id": "e3875e47-0d97-4070-9bac-c0adb175f2a0",
+      "is_verified": true
+    },
+    {
+      "email": "student1771717543022@student.babcock.edu.ng",
+      "role": "student",
+      "department_id": "b14d6c70-9e86-4770-b51c-c10580a4b3e4",
+      "is_verified": true
+    },
+    {
+      "email": "test@gmail.com",
+      "role": "public",
+      "department_id": null,
+      "is_verified": true
+    },
+    {
+      "email": "student1_1771717882083@student.babcock.edu.ng",
+      "role": "student",
+      "department_id": "b14d6c70-9e86-4770-b51c-c10580a4b3e4",
+      "is_verified": true
+    },
+    {
+      "email": "qa@student.babcock.edu.ng",
+      "role": "student",
+      "department_id": "095c4247-a783-45c6-b017-84d7d9212a08",
+      "is_verified": true
+    },
+    {
+      "email": "qa@gmail.com",
+      "role": "public",
+      "department_id": null,
+      "is_verified": true
+    },
+    {
+      "email": "student1@qa.com",
+      "role": "public",
+      "department_id": null,
+      "is_verified": true
+    },
+    {
+      "email": "super1@qa.com",
+      "role": "public",
+      "department_id": null,
+      "is_verified": true
+    },
+    {
+      "email": "public1@qa.com",
+      "role": "public",
+      "department_id": null,
+      "is_verified": true
+    },
+    {
+      "email": "student1771717201942@student.babcock.edu.ng",
+      "role": "student",
+      "department_id": "b14d6c70-9e86-4770-b51c-c10580a4b3e4",
+      "is_verified": true
+    },
+    {
+      "email": "student1771717284763@student.babcock.edu.ng",
+      "role": "student",
+      "department_id": "b14d6c70-9e86-4770-b51c-c10580a4b3e4",
+      "is_verified": true
+    },
+    {
+      "email": "student1771717365240@student.babcock.edu.ng",
+      "role": "student",
+      "department_id": "b14d6c70-9e86-4770-b51c-c10580a4b3e4",
+      "is_verified": true
+    },
+    {
+      "email": "student1771717454883@student.babcock.edu.ng",
+      "role": "student",
+      "department_id": "b14d6c70-9e86-4770-b51c-c10580a4b3e4",
+      "is_verified": true
+    },
+    {
+      "email": "student2_1771717882083@student.babcock.edu.ng",
+      "role": "student",
+      "department_id": "b14d6c70-9e86-4770-b51c-c10580a4b3e4",
+      "is_verified": true
+    },
+    {
+      "email": "student1_1771717943424@student.babcock.edu.ng",
+      "role": "student",
+      "department_id": "b14d6c70-9e86-4770-b51c-c10580a4b3e4",
+      "is_verified": true
+    },
+    {
+      "email": "student2_1771717943424@student.babcock.edu.ng",
+      "role": "student",
+      "department_id": "b14d6c70-9e86-4770-b51c-c10580a4b3e4",
+      "is_verified": true
+    },
+    {
+      "email": "student1_1771718016731@student.babcock.edu.ng",
+      "role": "student",
+      "department_id": "b14d6c70-9e86-4770-b51c-c10580a4b3e4",
+      "is_verified": true
+    },
+    {
+      "email": "student2_1771718016731@student.babcock.edu.ng",
+      "role": "student",
+      "department_id": "b14d6c70-9e86-4770-b51c-c10580a4b3e4",
+      "is_verified": true
+    },
+    {
+      "email": "student1_1771718218177@student.babcock.edu.ng",
+      "role": "student",
+      "department_id": "b14d6c70-9e86-4770-b51c-c10580a4b3e4",
+      "is_verified": true
+    },
+    {
+      "email": "student2_1771718218177@student.babcock.edu.ng",
+      "role": "student",
+      "department_id": "b14d6c70-9e86-4770-b51c-c10580a4b3e4",
+      "is_verified": true
+    },
+    {
+      "email": "student1_1771718679934@student.babcock.edu.ng",
+      "role": "student",
+      "department_id": "b14d6c70-9e86-4770-b51c-c10580a4b3e4",
+      "is_verified": true
+    },
+    {
+      "email": "student2_1771718679934@student.babcock.edu.ng",
+      "role": "student",
+      "department_id": "b14d6c70-9e86-4770-b51c-c10580a4b3e4",
+      "is_verified": true
+    },
+    {
+      "email": "student1_1771718708734@student.babcock.edu.ng",
+      "role": "student",
+      "department_id": "b14d6c70-9e86-4770-b51c-c10580a4b3e4",
+      "is_verified": true
+    },
+    {
+      "email": "student2_1771718708734@student.babcock.edu.ng",
+      "role": "student",
+      "department_id": "b14d6c70-9e86-4770-b51c-c10580a4b3e4",
+      "is_verified": true
+    },
+    {
+      "email": "staff1771721607742@babcock.edu.ng",
+      "role": "supervisor",
+      "department_id": "b14d6c70-9e86-4770-b51c-c10580a4b3e4",
+      "is_verified": false
+    },
+    {
+      "email": "student1_1771721607742@student.babcock.edu.ng",
+      "role": "student",
+      "department_id": "b14d6c70-9e86-4770-b51c-c10580a4b3e4",
+      "is_verified": false
+    },
+    {
+      "email": "student2_1771721607742@student.babcock.edu.ng",
+      "role": "student",
+      "department_id": "b14d6c70-9e86-4770-b51c-c10580a4b3e4",
+      "is_verified": false
+    },
+    {
+      "email": "okpalannajiakux8982@student.babcock.edu.ng",
+      "role": "student",
+      "department_id": "e3875e47-0d97-4070-9bac-c0adb175f2a0",
+      "is_verified": false
+    },
+    {
+      "email": "daniel@babcock.edu.ng",
+      "role": "supervisor",
+      "department_id": "9f5b6764-4405-4482-b4f9-0f7366ce7be0",
+      "is_verified": false
+    },
+    {
+      "email": "user@student.babcock.edu.ng",
+      "role": "student",
+      "department_id": "b14d6c70-9e86-4770-b51c-c10580a4b3e4",
+      "is_verified": true
+    },
+    {
+      "email": "ban@gmail.com",
+      "role": "public",
+      "department_id": null,
+      "is_verified": true
+    },
+    {
+      "email": "warn@gmail.com",
+      "role": "public",
+      "department_id": null,
+      "is_verified": true
+    },
+    {
+      "email": "restrict@gmail.com",
+      "role": "public",
+      "department_id": null,
+      "is_verified": true
+    },
+    {
+      "email": "supervisorreq@babcock.edu.ng",
+      "role": "supervisor",
+      "department_id": "e3875e47-0d97-4070-9bac-c0adb175f2a0",
+      "is_verified": false
+    }
+  ]
+}

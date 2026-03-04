@@ -1,0 +1,1604 @@
+
+
+=================================================================
+--- FILE: src/app/api/admin/ai-categories/route.ts ---
+=================================================================
+import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/session";
+import { AdminService } from "@/services/admin.service";
+import { supabaseAdmin } from "@/lib/supabase-admin";
+
+export async function GET() {
+    try {
+        await requireAdmin();
+        const { data, error } = await supabaseAdmin.from("ai_categories").select("*").order("name");
+        if (error) throw error;
+        return NextResponse.json({ success: true, data });
+    } catch (error: any) {
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    }
+}
+
+export async function POST(request: Request) {
+    try {
+        await requireAdmin();
+        const data = await request.json();
+        await AdminService.manageLookupData("ai_categories", "create", undefined, data);
+        return NextResponse.json({ success: true });
+    } catch (error: any) {
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    }
+}
+
+
+=================================================================
+--- FILE: src/app/api/admin/ai-categories/[id]/route.ts ---
+=================================================================
+import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/session";
+import { AdminService } from "@/services/admin.service";
+
+export async function PUT(
+    request: Request,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        await requireAdmin();
+        const { id } = await params;
+        const data = await request.json();
+        await AdminService.manageLookupData("ai_categories", "update", id, data);
+        return NextResponse.json({ success: true });
+    } catch (error: any) {
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    }
+}
+
+export async function DELETE(
+    request: Request,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        await requireAdmin();
+        const { id } = await params;
+        await AdminService.manageLookupData("ai_categories", "delete", id);
+        return NextResponse.json({ success: true });
+    } catch (error: any) {
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    }
+}
+
+
+=================================================================
+--- FILE: src/app/api/admin/departments/route.ts ---
+=================================================================
+import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/session";
+import { AdminService } from "@/services/admin.service";
+import { supabaseAdmin } from "@/lib/supabase-admin";
+
+export async function GET() {
+    try {
+        await requireAdmin();
+        const { data, error } = await supabaseAdmin.from("departments").select("*").order("name");
+        if (error) throw error;
+        return NextResponse.json({ success: true, data });
+    } catch (error: any) {
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    }
+}
+
+export async function POST(request: Request) {
+    try {
+        await requireAdmin();
+        const data = await request.json();
+        await AdminService.manageLookupData("departments", "create", undefined, data);
+        return NextResponse.json({ success: true });
+    } catch (error: any) {
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    }
+}
+
+
+=================================================================
+--- FILE: src/app/api/admin/departments/[id]/route.ts ---
+=================================================================
+import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/session";
+import { AdminService } from "@/services/admin.service";
+
+export async function PUT(
+    request: Request,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        await requireAdmin();
+        const { id } = await params;
+        const data = await request.json();
+        await AdminService.manageLookupData("departments", "update", id, data);
+        return NextResponse.json({ success: true });
+    } catch (error: any) {
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    }
+}
+
+export async function DELETE(
+    request: Request,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        await requireAdmin();
+        const { id } = await params;
+        await AdminService.manageLookupData("departments", "delete", id);
+        return NextResponse.json({ success: true });
+    } catch (error: any) {
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    }
+}
+
+
+=================================================================
+--- FILE: src/app/api/admin/users/route.ts ---
+=================================================================
+import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/session";
+import { AdminService } from "@/services/admin.service";
+
+export async function GET(request: Request) {
+    try {
+        await requireAdmin();
+        const { searchParams } = new URL(request.url);
+        const query = searchParams.get("query") || undefined;
+        const role = searchParams.get("role") || undefined;
+        const status = searchParams.get("status") || undefined;
+
+        const users = await AdminService.getUsers(query, role, status);
+        return NextResponse.json({ success: true, data: users });
+    } catch (error: any) {
+        return NextResponse.json(
+            { success: false, error: error.message },
+            { status: error.message.includes("Forbidden") ? 403 : 500 }
+        );
+    }
+}
+
+
+=================================================================
+--- FILE: src/app/api/admin/users/[id]/status/route.ts ---
+=================================================================
+import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/session";
+import { AdminService } from "@/services/admin.service";
+
+export async function PATCH(
+    request: Request,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        const admin = await requireAdmin();
+        const { id } = await params;
+        const { status, reason } = await request.json();
+
+        if (!status || !reason) {
+            return NextResponse.json({ success: false, error: "Status and reason are required" }, { status: 400 });
+        }
+
+        await AdminService.updateUserStatus(id, admin.id, status, reason);
+        return NextResponse.json({ success: true });
+    } catch (error: any) {
+        return NextResponse.json(
+            { success: false, error: error.message },
+            { status: error.message.includes("Forbidden") ? 403 : 500 }
+        );
+    }
+}
+
+
+=================================================================
+--- FILE: src/app/api/admin/users/[id]/verify/route.ts ---
+=================================================================
+import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/session";
+import { AdminService } from "@/services/admin.service";
+
+export async function PATCH(
+    request: Request,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        await requireAdmin();
+        const { id } = await params;
+
+        await AdminService.verifySupervisor(id);
+        return NextResponse.json({ success: true });
+    } catch (error: any) {
+        return NextResponse.json(
+            { success: false, error: error.message },
+            { status: error.message.includes("Forbidden") ? 403 : 500 }
+        );
+    }
+}
+
+
+=================================================================
+--- FILE: src/app/api/ai/assistant/route.ts ---
+=================================================================
+import { NextResponse } from "next/server";
+import { AIService } from "@/services/ai.service";
+import { requireAuth } from "@/lib/session";
+
+export async function POST(request: Request) {
+    try {
+        const user = await requireAuth();
+        const { message, history, pageContext } = await request.json();
+
+        if (!message) {
+            return NextResponse.json({ success: false, error: "Message is required" }, { status: 400 });
+        }
+
+        // 1. Quota check
+        await AIService.checkAndIncrementUsage(user.id, 'assistant');
+
+        const reply = await AIService.globalAssistant(
+            pageContext || { path: "/" },
+            history || [],
+            message
+        );
+
+        return NextResponse.json({ success: true, reply });
+    } catch (error: any) {
+        console.error("Global AI Assistant Route Error:", error);
+        return NextResponse.json(
+            { success: false, error: error.message },
+            { status: 500 }
+        );
+    }
+}
+
+
+=================================================================
+--- FILE: src/app/api/ai/suggest-categories/route.ts ---
+=================================================================
+import { NextResponse } from "next/server";
+import { AIService } from "@/services/ai.service";
+import { supabaseAdmin } from "@/lib/supabase-admin";
+
+export async function POST(request: Request) {
+    try {
+        const { query } = await request.json();
+
+        if (!query) {
+            return NextResponse.json({ success: false, error: "Message is required" }, { status: 400 });
+        }
+
+        // 1. Fetch available categories from DB (using admin client)
+        const { data: categories } = await supabaseAdmin
+            .from('ai_categories')
+            .select('name');
+
+        const categoryNames = categories?.map((c: any) => c.name) || [];
+
+        // 2. Get suggestions via Gemini
+        const suggestions = await AIService.suggestCategories(query, categoryNames);
+
+        return NextResponse.json({ success: true, suggestions });
+    } catch (error: any) {
+        console.error("Suggest Categories Route Error:", error);
+        return NextResponse.json(
+            { success: false, error: error.message },
+            { status: 500 }
+        );
+    }
+}
+
+
+=================================================================
+--- FILE: src/app/api/ai-categories/route.ts ---
+=================================================================
+import { NextResponse } from "next/server";
+import { supabaseAdmin } from "../../../lib/supabase-admin";
+
+export async function GET() {
+    try {
+        console.log("Fetching AI categories...");
+        const { data, error } = await supabaseAdmin
+            .from("projects")
+            .select("ai_category")
+            .eq("status", "approved")
+            .not("ai_category", "is", null);
+
+        if (error) {
+            console.error("Supabase error in ai-categories:", error);
+            throw error;
+        }
+
+        const categories = Array.from(new Set((data || []).map(p => p.ai_category)))
+            .map(name => ({ name }))
+            .sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+
+        console.log(`Found ${categories.length} categories`);
+        return NextResponse.json({ success: true, data: categories });
+    } catch (error: any) {
+        console.error("AI categories API error:", error);
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    }
+}
+
+
+=================================================================
+--- FILE: src/app/api/auth/login/route.ts ---
+=================================================================
+import { NextResponse } from "next/server";
+import { loginSchema } from "@/schemas";
+import { AuthService } from "@/services/auth.service";
+import { createSessionCookie } from "@/lib/session";
+
+export async function POST(request: Request) {
+    try {
+        const body = await request.json();
+
+        // 1. Zod Validation
+        const validation = loginSchema.safeParse(body);
+        if (!validation.success) {
+            return NextResponse.json(
+                { success: false, error: "Validation failed", details: validation.error.flatten().fieldErrors },
+                { status: 400 }
+            );
+        }
+
+        // 2. Auth Service execution (handles credential and banned/active rules validation)
+        const { user, token, expiresAt } = await AuthService.login(validation.data);
+
+        // 3. Create Session Cookie
+        await createSessionCookie(token, expiresAt);
+
+        // 4. Return success
+        return NextResponse.json({ success: true, data: user }, { status: 200 });
+
+    } catch (error: any) {
+        console.error("Login error:", error);
+        // Important: Always return 401 Unauthorized for bad creds or bans
+        return NextResponse.json(
+            { success: false, error: error.message || "Invalid credentials" },
+            { status: 401 }
+        );
+    }
+}
+
+
+=================================================================
+--- FILE: src/app/api/auth/logout/route.ts ---
+=================================================================
+import { NextResponse } from "next/server";
+import { destroySessionCookie } from "@/lib/session";
+
+export async function POST(request: Request) {
+    try {
+        // 1. Destroy Session Cookie
+        await destroySessionCookie();
+
+        // 2. Return success
+        return NextResponse.json({ success: true, message: "Logged out successfully" }, { status: 200 });
+    } catch (error: any) {
+        console.error("Logout error:", error);
+        return NextResponse.json(
+            { success: false, error: "An error occurred during logout." },
+            { status: 500 }
+        );
+    }
+}
+
+
+=================================================================
+--- FILE: src/app/api/auth/register/route.ts ---
+=================================================================
+import { NextResponse } from "next/server";
+import { registerSchema } from "@/schemas";
+import { AuthService } from "@/services/auth.service";
+import { createSessionCookie } from "@/lib/session";
+
+export async function POST(request: Request) {
+    try {
+        const body = await request.json();
+
+        // 1. Zod Validation
+        const validation = registerSchema.safeParse(body);
+        if (!validation.success) {
+            return NextResponse.json(
+                { success: false, error: "Validation failed", details: validation.error.flatten().fieldErrors },
+                { status: 400 }
+            );
+        }
+
+        // 2. Auth Service execution
+        const { user, token, expiresAt } = await AuthService.register(validation.data);
+
+        // 3. Create Session Cookie
+        await createSessionCookie(token, expiresAt);
+
+        // 4. Return success response (never returning the password hash)
+        return NextResponse.json({ success: true, data: user }, { status: 201 });
+
+    } catch (error: any) {
+        console.error("Registration error:", error);
+        return NextResponse.json(
+            { success: false, error: error.message || "An unexpected error occurred during registration." },
+            { status: 400 }
+        );
+    }
+}
+
+
+=================================================================
+--- FILE: src/app/api/auth/session/route.ts ---
+=================================================================
+import { NextResponse } from "next/server";
+import { getSession } from "@/lib/session";
+
+export async function GET() {
+    try {
+        const session = await getSession();
+        if (!session?.user) {
+            return NextResponse.json({ success: false, user: null }, { status: 401 });
+        }
+        return NextResponse.json({ success: true, user: session.user });
+    } catch (error) {
+        return NextResponse.json({ success: false, error: "Failed to fetch session" }, { status: 500 });
+    }
+}
+
+
+=================================================================
+--- FILE: src/app/api/change-requests/[id]/resolve/route.ts ---
+=================================================================
+import { NextResponse } from "next/server";
+import { requireAuth } from "@/lib/session";
+import { ChangeRequestService } from "@/services/change-request.service";
+import { z } from "zod";
+
+const resolveSchema = z.object({
+    status: z.enum(["approved", "denied"]),
+    response: z.string().min(1, "Response/Reason is required"),
+});
+
+export async function PATCH(
+    request: Request,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        const user = await requireAuth();
+        const { id } = await params;
+
+        if (user.role !== "supervisor") {
+            return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 403 });
+        }
+
+        const body = await request.json();
+        const validation = resolveSchema.safeParse(body);
+
+        if (!validation.success) {
+            return NextResponse.json({ success: false, error: "Validation failed", details: validation.error.flatten().fieldErrors }, { status: 400 });
+        }
+
+        const { status, response } = validation.data;
+        const result = await ChangeRequestService.resolveRequest(id, user.id, status, response);
+
+        return NextResponse.json(result);
+    } catch (error: any) {
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    }
+}
+
+
+=================================================================
+--- FILE: src/app/api/change-requests/[id]/withdraw/route.ts ---
+=================================================================
+import { NextResponse } from "next/server";
+import { requireAuth } from "@/lib/session";
+import { ChangeRequestService } from "@/services/change-request.service";
+
+export async function PATCH(
+    request: Request,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        const user = await requireAuth();
+        const { id } = await params;
+
+        const result = await ChangeRequestService.withdrawRequest(id, user.id);
+        return NextResponse.json(result);
+    } catch (error: any) {
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    }
+}
+
+
+=================================================================
+--- FILE: src/app/api/comments/[id]/route.ts ---
+=================================================================
+import { NextResponse } from "next/server";
+import { CommentService } from "@/services/comment.service";
+import { getSession } from "@/lib/session";
+
+export async function PATCH(
+    request: Request,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        const session = await getSession();
+        if (!session?.user) {
+            return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+        }
+
+        const { id } = await params;
+        const body = await request.json();
+        const { content } = body;
+
+        if (!content || typeof content !== "string" || content.trim().length === 0) {
+            return NextResponse.json({ success: false, error: "Comment content is required" }, { status: 400 });
+        }
+
+        const updatedComment = await CommentService.editComment(id, session.user.id, content.trim());
+        return NextResponse.json({ success: true, data: updatedComment });
+    } catch (error: any) {
+        console.error("Patch Comment API Error:", error);
+        return NextResponse.json({ success: false, error: error.message }, { status: error.message === "Unauthorized" ? 403 : 500 });
+    }
+}
+
+export async function DELETE(
+    request: Request,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        const session = await getSession();
+        if (!session?.user) {
+            return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+        }
+
+        const { id } = await params;
+
+        if (session.user.role === "admin") {
+            // Hard Delete
+            await CommentService.hardDeleteComment(id);
+        } else {
+            // Soft Delete
+            await CommentService.softDeleteComment(id, session.user.id);
+        }
+
+        return NextResponse.json({ success: true });
+    } catch (error: any) {
+        console.error("Delete Comment API Error:", error);
+        return NextResponse.json({ success: false, error: error.message }, { status: error.message === "Unauthorized" ? 403 : 500 });
+    }
+}
+
+
+=================================================================
+--- FILE: src/app/api/departments/route.ts ---
+=================================================================
+import { NextResponse } from "next/server";
+import { supabaseAdmin } from "../../../lib/supabase-admin";
+
+export async function GET() {
+    try {
+        console.log("Fetching departments...");
+        const { data, error } = await supabaseAdmin
+            .from("departments")
+            .select("id, name")
+            .order("name");
+
+        if (error) {
+            console.error("Supabase error in departments:", error);
+            throw error;
+        }
+
+        console.log(`Found ${data?.length || 0} departments`);
+        return NextResponse.json({ success: true, data });
+    } catch (error: any) {
+        console.error("Departments API error:", error);
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    }
+}
+
+
+=================================================================
+--- FILE: src/app/api/projects/public/route.ts ---
+=================================================================
+import { NextResponse } from "next/server";
+import { ProjectService } from "@/services/project.service";
+
+export async function GET(request: Request) {
+    try {
+        const { searchParams } = new URL(request.url);
+        const department_id = searchParams.get("department_id") || undefined;
+        const ai_category = searchParams.get("ai_category") || undefined;
+        const query = searchParams.get("query") || undefined;
+        const page = parseInt(searchParams.get("page") || "1");
+        const limit = parseInt(searchParams.get("limit") || "12");
+
+        const result = await ProjectService.getPublicProjects({
+            department_id,
+            ai_category,
+            query,
+            page,
+            limit
+        });
+
+        return NextResponse.json({ success: true, ...result });
+    } catch (error: any) {
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    }
+}
+
+
+=================================================================
+--- FILE: src/app/api/projects/route.ts ---
+=================================================================
+import { NextResponse } from "next/server";
+import { requireAuth } from "@/lib/session";
+import { StorageService } from "@/services/storage.service";
+import { calculatePlagiarismScore } from "@/lib/plagiarism";
+import { ProjectService } from "@/services/project.service";
+import { AIService } from "@/services/ai.service";
+import { projectSubmissionSchema } from "@/schemas";
+import { supabaseAdmin } from "@/lib/supabase-admin";
+const pdfParse = require("pdf-parse");
+
+export async function GET() {
+    try {
+        const user = await requireAuth();
+        const projects = await ProjectService.getUserProjects(user.id);
+        return NextResponse.json({ success: true, data: projects });
+    } catch (error: any) {
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    }
+}
+
+export async function POST(request: Request) {
+    try {
+        const user = await requireAuth();
+
+        if (user.role !== "student") {
+            return NextResponse.json({ success: false, error: "Only students can upload projects" }, { status: 403 });
+        }
+
+        const formData = await request.formData();
+
+        // Extract file
+        const file = formData.get("file") as File;
+        if (!file || file.type !== "application/pdf") {
+            return NextResponse.json({ success: false, error: "A valid PDF file is required" }, { status: 400 });
+        }
+
+        // Extract and validate metadata
+        const metadataString = formData.get("metadata") as string;
+        if (!metadataString) {
+            return NextResponse.json({ success: false, error: "Submission metadata missing" }, { status: 400 });
+        }
+
+        let metadataRaw;
+        try {
+            metadataRaw = JSON.parse(metadataString);
+        } catch {
+            return NextResponse.json({ success: false, error: "Invalid metadata format" }, { status: 400 });
+        }
+
+        const validation = projectSubmissionSchema.safeParse(metadataRaw);
+
+        if (!validation.success) {
+            return NextResponse.json(
+                { success: false, error: "Validation failed", details: validation.error.flatten().fieldErrors },
+                { status: 400 }
+            );
+        }
+
+        // Generate a relatively unique filename prefixing the requesting user ID to sandbox
+        const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
+        const fileName = `${user.id}/${Date.now()}_${safeName}`;
+        const arrayBuffer = await file.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+
+        // Upload to Supabase Storage
+        let reportUrl = "";
+        try {
+            reportUrl = await StorageService.uploadProjectPDF(buffer, fileName, file.type);
+        } catch (uploadError: any) {
+            return NextResponse.json({ success: false, error: uploadError.message }, { status: 400 });
+        }
+
+        // Parse PDF Native Text
+        let pdfText = "";
+        try {
+            // Resolve the parser - Version 2 (Mehmet Kozan) uses a class-based API
+            const parserClass = typeof pdfParse === 'function' ? pdfParse : (pdfParse.PDFParse || pdfParse.default || pdfParse);
+
+            if (typeof parserClass === 'function' && (parserClass.toString().includes('class') || parserClass.name === 'PDFParse')) {
+                // Class-based API (v2)
+                const instance = new parserClass({ data: buffer });
+                const result = await instance.getText();
+                pdfText = result.text;
+            } else if (typeof parserClass === 'function') {
+                // Function-based API (v1 / standard)
+                const pdfData = await parserClass(buffer);
+                pdfText = pdfData.text;
+            } else {
+                throw new Error(`PDF parser initialization failed: resolved type is ${typeof parserClass}`);
+            }
+        } catch (parseError: any) {
+            console.error("PDF Parsing failed:", parseError);
+            return NextResponse.json({
+                success: false,
+                error: `Failed to read PDF content: ${parseError.message || "Unknown error"}. Please ensure it is a valid, unencrypted PDF.`
+            }, { status: 400 });
+        }
+
+        // 5. System Analysis
+        const plagiarismScore = await calculatePlagiarismScore(pdfText);
+
+        // 6. AI Metadata Generation
+        const { data: categoriesData } = await supabaseAdmin.from("ai_categories").select("name");
+        const availableCategories = categoriesData?.map(c => c.name) || [];
+
+        const aiMetadata = await AIService.generateProjectMetadata(
+            { title: validation.data.title, abstract: validation.data.abstract },
+            availableCategories
+        );
+
+        // 7. Dispatch payload to Transaction manager 
+        const project = await ProjectService.createSubmission(
+            {
+                ...validation.data,
+                student_tags: aiMetadata.tags
+            },
+            user,
+            reportUrl,
+            pdfText,
+            plagiarismScore,
+            aiMetadata.category
+        );
+
+        return NextResponse.json({ success: true, data: project }, { status: 201 });
+
+    } catch (error: any) {
+        console.error("Submission error:", error);
+        if (error.message === "Unauthorized") {
+            return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+        }
+        return NextResponse.json({ success: false, error: "An unexpected error occurred processing your submission." }, { status: 500 });
+    }
+}
+
+
+=================================================================
+--- FILE: src/app/api/projects/[id]/ai/analysis/route.ts ---
+=================================================================
+import { NextResponse } from "next/server";
+import { ProjectService } from "@/services/project.service";
+import { AIService } from "@/services/ai.service";
+import { requireAuth } from "@/lib/session";
+
+export async function POST(
+    request: Request,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        const { id } = await params;
+        const user = await requireAuth();
+
+        // 1. Check if cached analysis exists
+        const project = await ProjectService.getPublicProjectDetail(id);
+
+        if (project.ai_limitations) {
+            try {
+                return NextResponse.json({ success: true, analysis: JSON.parse(project.ai_limitations) });
+            } catch (e) {
+                // If stored data is not JSON for some reason, we'll regenerate
+            }
+        }
+
+        // 2. Prerequisite check
+        if (!project.pdf_text) {
+            return NextResponse.json(
+                { success: false, error: "Analysis cannot be performed for this project (PDF text missing)." },
+                { status: 400 }
+            );
+        }
+
+        // 3. Quota check
+        await AIService.checkAndIncrementUsage(user.id, 'analysis');
+
+        // 4. Generate via Gemini
+        const analysis = await AIService.generateAnalysis({
+            title: project.title,
+            abstract: project.abstract,
+            pdf_text: project.pdf_text
+        });
+
+        // 4. Persistence as JSON string
+        await ProjectService.saveAIAnalysis(id, JSON.stringify(analysis));
+
+        return NextResponse.json({ success: true, analysis });
+    } catch (error: any) {
+        console.error("AI Analysis Route Error:", error);
+        return NextResponse.json(
+            { success: false, error: error.message },
+            { status: 500 }
+        );
+    }
+}
+
+
+=================================================================
+--- FILE: src/app/api/projects/[id]/ai/chat/route.ts ---
+=================================================================
+import { NextResponse } from "next/server";
+import { ProjectService } from "@/services/project.service";
+import { AIService } from "@/services/ai.service";
+import { requireAuth } from "@/lib/session";
+
+export async function POST(
+    request: Request,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        const { id } = await params;
+        const user = await requireAuth();
+        const { message, history } = await request.json();
+
+        if (!message) {
+            return NextResponse.json({ success: false, error: "Message is required" }, { status: 400 });
+        }
+
+        // 1. Fetch project context
+        const project = await ProjectService.getPublicProjectDetail(id);
+
+        if (!project.pdf_text) {
+            return NextResponse.json(
+                { success: false, error: "Chat cannot be initiated for this project (PDF text missing)." },
+                { status: 400 }
+            );
+        }
+
+        // 2. Quota check
+        await AIService.checkAndIncrementUsage(user.id, 'chat');
+
+        // 3. Chat via Gemini
+        const reply = await AIService.projectChat(
+            {
+                title: project.title,
+                abstract: project.abstract,
+                pdf_text: project.pdf_text
+            },
+            history || [],
+            message
+        );
+
+        return NextResponse.json({ success: true, reply });
+    } catch (error: any) {
+        console.error("AI Project Chat Route Error:", error);
+        return NextResponse.json(
+            { success: false, error: error.message },
+            { status: 500 }
+        );
+    }
+}
+
+
+=================================================================
+--- FILE: src/app/api/projects/[id]/ai/summary/route.ts ---
+=================================================================
+import { NextResponse } from "next/server";
+import { ProjectService } from "@/services/project.service";
+import { AIService } from "@/services/ai.service";
+import { requireAuth } from "@/lib/session";
+
+export async function POST(
+    request: Request,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        const { id } = await params;
+        const user = await requireAuth();
+
+        // 1. Check if cached summary exists
+        const project = await ProjectService.getPublicProjectDetail(id);
+
+        if (project.ai_summary) {
+            return NextResponse.json({ success: true, summary: project.ai_summary });
+        }
+
+        // 2. No summary? Check if we have the prerequisite PDF text
+        if (!project.pdf_text) {
+            return NextResponse.json(
+                { success: false, error: "Summary cannot be generated for this project (PDF text missing)." },
+                { status: 400 }
+            );
+        }
+
+        // 3. Quota check
+        await AIService.checkAndIncrementUsage(user.id, 'summary');
+
+        // 4. Generate via Gemini
+        const summary = await AIService.generateSummary({
+            title: project.title,
+            abstract: project.abstract,
+            pdf_text: project.pdf_text
+        });
+
+        // 4. Persistence
+        await ProjectService.saveAISummary(id, summary);
+
+        return NextResponse.json({ success: true, summary });
+    } catch (error: any) {
+        console.error("AI Summary Route Error:", error);
+        return NextResponse.json(
+            { success: false, error: error.message },
+            { status: 500 }
+        );
+    }
+}
+
+
+=================================================================
+--- FILE: src/app/api/projects/[id]/change-request/route.ts ---
+=================================================================
+import { NextResponse } from "next/server";
+import { requireAuth } from "@/lib/session";
+import { ChangeRequestService } from "@/services/change-request.service";
+import { StorageService } from "@/services/storage.service";
+import { calculatePlagiarismScore } from "@/lib/plagiarism";
+
+// Dynamic import for pdf-parse to avoid bundling issues
+const pdfParse = require("pdf-parse");
+
+export async function GET(
+    request: Request,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        const user = await requireAuth();
+        const { id } = await params;
+        const req = await ChangeRequestService.getProjectRequest(id);
+        return NextResponse.json({ success: true, data: req });
+    } catch (error: any) {
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    }
+}
+
+export async function POST(
+    request: Request,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        const user = await requireAuth();
+        const { id: projectId } = await params;
+
+        const formData = await request.formData();
+        const fields = JSON.parse(formData.get("fields") as string);
+        const reason = formData.get("reason") as string;
+        const proposedData = JSON.parse(formData.get("proposedData") as string);
+        const reportFile = formData.get("reportFile") as File | null;
+
+        let newReportUrl;
+        let newPdfText;
+        let newPlagiarismScore;
+
+        if (reportFile && fields.includes("PDF Report")) {
+            // Process PDF
+            const buffer = Buffer.from(await reportFile.arrayBuffer());
+
+            // PDF Text Extraction
+            let pdfText = "";
+            try {
+                const parserClass = typeof pdfParse === 'function' ? pdfParse : (pdfParse.PDFParse || pdfParse.default);
+                const instance = new parserClass({ data: buffer });
+                const result = await instance.getText();
+                pdfText = result.text;
+                newPdfText = pdfText;
+            } catch (e) {
+                console.error("PDF Parse error in change request:", e);
+                // Continue without text if it fails, or throw? Better to throw if plagiarism check is required
+                throw new Error("Failed to parse PDF for plagiarism check.");
+            }
+
+            // Plagiarism Check
+            newPlagiarismScore = await calculatePlagiarismScore(pdfText);
+
+            // Upload
+            const safeName = reportFile.name.replace(/[^a-zA-Z0-9.-]/g, "_");
+            const fileName = `${user.id}/cr_${Date.now()}_${safeName}`;
+            newReportUrl = await StorageService.uploadProjectPDF(buffer, fileName, reportFile.type);
+        }
+
+        const result = await ChangeRequestService.submitRequest(projectId, user.id, {
+            fields,
+            reason,
+            proposedData,
+            newReportUrl,
+            newPdfText,
+            newPlagiarismScore
+        });
+
+        return NextResponse.json({ success: true, data: result });
+
+    } catch (error: any) {
+        console.error("Change request submission error:", error);
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    }
+}
+
+
+=================================================================
+--- FILE: src/app/api/projects/[id]/comments/route.ts ---
+=================================================================
+import { NextResponse } from "next/server";
+import { CommentService } from "@/services/comment.service";
+import { getSession } from "@/lib/session";
+import { ProjectService } from "@/services/project.service";
+
+export async function GET(
+    request: Request,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        const { id } = await params;
+        const project = await ProjectService.getPublicProjectDetail(id);
+
+        if (project.status !== "approved") {
+            return NextResponse.json({ success: true, data: [] }); // Comments only exist on approved projects
+        }
+
+        const comments = await CommentService.getProjectComments(id);
+        return NextResponse.json({ success: true, data: comments });
+    } catch (error: any) {
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    }
+}
+
+export async function POST(
+    request: Request,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        const session = await getSession();
+        if (!session?.user) {
+            return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+        }
+
+        const { id } = await params;
+        const body = await request.json();
+        const { content, parent_id } = body;
+
+        if (!content || typeof content !== "string" || content.trim().length === 0) {
+            return NextResponse.json({ success: false, error: "Comment content is required" }, { status: 400 });
+        }
+
+        // Verify project is approved before allowing comment
+        const project = await ProjectService.getPublicProjectDetail(id);
+        if (project.status !== "approved") {
+            return NextResponse.json({ success: false, error: "Comments are disabled for this project." }, { status: 403 });
+        }
+
+        const newComment = await CommentService.postComment(id, session.user.id, content.trim(), parent_id);
+        return NextResponse.json({ success: true, data: newComment });
+    } catch (error: any) {
+        console.error("Post Comment API Error:", error);
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    }
+}
+
+
+=================================================================
+--- FILE: src/app/api/projects/[id]/public/route.ts ---
+=================================================================
+import { NextResponse } from "next/server";
+import { ProjectService } from "@/services/project.service";
+import { getSession } from "@/lib/session";
+
+export async function GET(
+    request: Request,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        const { id } = await params;
+        const project = await ProjectService.getPublicProjectDetail(id);
+        const session = await getSession();
+        const user = session?.user;
+
+        // Visibility Logic
+        if (project.status !== 'approved') {
+            if (!user) {
+                return NextResponse.json({ success: false, error: "Authentication required to view this project." }, { status: 401 });
+            }
+
+            const isAdmin = user.role === 'admin';
+            const isSupervisor = project.supervisor_id === user.id;
+            const isAuthor = project.authors?.some((a: any) => a.student?.id === user.id);
+
+            if (!isAdmin && !isSupervisor && !isAuthor) {
+                return NextResponse.json({ success: false, error: "You do not have permission to view this project yet." }, { status: 403 });
+            }
+        }
+
+        return NextResponse.json({ success: true, data: project });
+    } catch (error: any) {
+        console.error("Public Project Detail API Error:", error);
+        return NextResponse.json({
+            success: false,
+            error: error.message,
+            debug: process.env.NODE_ENV === 'development' ? error : undefined
+        }, { status: 404 });
+    }
+}
+
+
+=================================================================
+--- FILE: src/app/api/projects/[id]/related/route.ts ---
+=================================================================
+import { NextResponse } from "next/server";
+import { ProjectService } from "@/services/project.service";
+
+export async function GET(
+    request: Request,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        const { id } = await params;
+        const { searchParams } = new URL(request.url);
+        const category = searchParams.get("category");
+
+        if (!category) {
+            return NextResponse.json({ success: true, data: [] });
+        }
+
+        const related = await ProjectService.getRelatedProjects(id, category);
+        return NextResponse.json({ success: true, data: related });
+    } catch (error: any) {
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    }
+}
+
+
+=================================================================
+--- FILE: src/app/api/projects/[id]/resubmit/route.ts ---
+=================================================================
+import { NextResponse } from "next/server";
+import { requireAuth } from "@/lib/session";
+import { ProjectService } from "@/services/project.service";
+import { StorageService } from "@/services/storage.service";
+import { calculatePlagiarismScore } from "@/lib/plagiarism";
+
+const pdfParse = require("pdf-parse");
+
+export async function POST(
+    request: Request,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        const user = await requireAuth();
+        const { id: projectId } = await params;
+
+        const formData = await request.formData();
+        const metadata = JSON.parse(formData.get("metadata") as string);
+        const file = formData.get("file") as File | null;
+
+        let reportUrl;
+        let pdfText;
+        let plagiarismScore;
+
+        if (file) {
+            const arrayBuffer = await file.arrayBuffer();
+            const buffer = Buffer.from(arrayBuffer);
+            const parserClass = typeof pdfParse === 'function' ? pdfParse : (pdfParse.PDFParse || pdfParse.default);
+            const instance = new parserClass({ data: buffer });
+            const result = await instance.getText();
+            pdfText = result.text;
+            plagiarismScore = await calculatePlagiarismScore(pdfText);
+
+            const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
+            const fileName = `${user.id}/${Date.now()}_${safeName}`;
+            reportUrl = await StorageService.uploadProjectPDF(buffer, fileName, file.type);
+        }
+
+        const result = await ProjectService.resubmitAfterRejection(projectId, user.id, metadata, reportUrl, pdfText, plagiarismScore);
+
+        return NextResponse.json({ success: true, data: result });
+    } catch (error: any) {
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    }
+}
+
+
+=================================================================
+--- FILE: src/app/api/projects/[id]/revision/route.ts ---
+=================================================================
+import { NextResponse } from "next/server";
+import { requireAuth } from "@/lib/session";
+import { ProjectService } from "@/services/project.service";
+import { StorageService } from "@/services/storage.service";
+import { calculatePlagiarismScore } from "@/lib/plagiarism";
+
+const pdfParse = require("pdf-parse");
+
+export async function POST(
+    request: Request,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        const user = await requireAuth();
+        const { id: projectId } = await params;
+
+        const formData = await request.formData();
+        const metadata = JSON.parse(formData.get("metadata") as string);
+        const file = formData.get("file") as File | null;
+
+        let reportUrl;
+        let pdfText;
+        let plagiarismScore;
+
+        if (file) {
+            const arrayBuffer = await file.arrayBuffer();
+            const buffer = Buffer.from(arrayBuffer);
+            const parserClass = typeof pdfParse === 'function' ? pdfParse : (pdfParse.PDFParse || pdfParse.default);
+            const instance = new parserClass({ data: buffer });
+            const result = await instance.getText();
+            pdfText = result.text;
+            plagiarismScore = await calculatePlagiarismScore(pdfText);
+
+            const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
+            const fileName = `${user.id}/${Date.now()}_${safeName}`;
+            reportUrl = await StorageService.uploadProjectPDF(buffer, fileName, file.type);
+        }
+
+        const result = await ProjectService.submitRevision(projectId, user.id, metadata, reportUrl, pdfText, plagiarismScore);
+
+        return NextResponse.json({ success: true, data: result });
+    } catch (error: any) {
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    }
+}
+
+
+=================================================================
+--- FILE: src/app/api/projects/[id]/route.ts ---
+=================================================================
+import { NextResponse } from "next/server";
+import { requireAuth } from "@/lib/session";
+import { ProjectService } from "@/services/project.service";
+import { StorageService } from "@/services/storage.service";
+import { calculatePlagiarismScore } from "@/lib/plagiarism";
+
+// Dynamic import for pdf-parse to avoid bundling issues
+const pdfParse = require("pdf-parse");
+
+export async function PATCH(
+    request: Request,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        const user = await requireAuth();
+        const { id } = await params;
+
+        const formData = await request.formData();
+        const metadata = JSON.parse(formData.get("metadata") as string);
+        const file = formData.get("file") as File | null;
+
+        let reportUrl;
+        let pdfText;
+        let plagiarismScore;
+
+        if (file) {
+            // PDF Text Extraction
+            const arrayBuffer = await file.arrayBuffer();
+            const buffer = Buffer.from(arrayBuffer);
+            const parserClass = typeof pdfParse === 'function' ? pdfParse : (pdfParse.PDFParse || pdfParse.default);
+            const instance = new parserClass({ data: buffer });
+            const result = await instance.getText();
+            pdfText = result.text;
+
+            // Plagiarism
+            plagiarismScore = await calculatePlagiarismScore(pdfText);
+
+            // Storage
+            const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
+            const fileName = `${user.id}/${Date.now()}_${safeName}`;
+            reportUrl = await StorageService.uploadProjectPDF(buffer, fileName, file.type);
+        }
+
+        // We can reuse updateProjectStatus for status, but for full edits we need a new method or use supabase direct
+        // For now, let's assume we just update the metadata in place for 'pending' projects
+        const { data, error } = await ProjectService.updateProject(id, user.id, metadata, reportUrl, pdfText, plagiarismScore);
+
+        if (error) throw new Error(error);
+
+        return NextResponse.json({ success: true, data });
+
+    } catch (error: any) {
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    }
+}
+
+
+=================================================================
+--- FILE: src/app/api/projects/[id]/status/route.ts ---
+=================================================================
+import { NextResponse } from "next/server";
+import { requireAuth } from "@/lib/session";
+import { ProjectService } from "@/services/project.service";
+import { z } from "zod";
+
+const statusSchema = z.object({
+    status: z.enum(["approved", "changes_requested", "rejected"]),
+    feedback: z.string().min(1, "Feedback is required"),
+});
+
+export async function PATCH(
+    request: Request,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        const { id } = await params;
+        const user = await requireAuth();
+
+        if (user.role !== "supervisor") {
+            return NextResponse.json({ success: false, error: "Only supervisors can update project status" }, { status: 403 });
+        }
+
+        const body = await request.json();
+        const validation = statusSchema.safeParse(body);
+
+        if (!validation.success) {
+            return NextResponse.json(
+                { success: false, error: "Validation failed", details: validation.error.flatten().fieldErrors },
+                { status: 400 }
+            );
+        }
+
+        const { status, feedback } = validation.data;
+        const result = await ProjectService.updateProjectStatus(
+            id,
+            user.id,
+            status,
+            feedback
+        );
+
+        return NextResponse.json({ success: true, data: result });
+
+    } catch (error: any) {
+        console.error("Status update error:", error);
+        if (error.message === "Unauthorized") {
+            return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+        }
+        return NextResponse.json({ success: false, error: error.message || "An unexpected error occurred." }, { status: 500 });
+    }
+}
+
+
+=================================================================
+--- FILE: src/app/api/projects/[id]/versions/route.ts ---
+=================================================================
+import { NextResponse } from "next/server";
+import { requireAuth } from "@/lib/session";
+import { ProjectService } from "@/services/project.service";
+
+export async function GET(
+    request: Request,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        await requireAuth();
+        const { id } = await params;
+
+        const versions = await ProjectService.getProjectVersionHistory(id);
+
+        return NextResponse.json({ success: true, data: versions });
+    } catch (error: any) {
+        console.error("Fetch versions error:", error);
+        return NextResponse.json(
+            { success: false, error: error.message || "Failed to fetch version history" },
+            { status: 500 }
+        );
+    }
+}
+
+
+=================================================================
+--- FILE: src/app/api/public/stats/route.ts ---
+=================================================================
+import { NextResponse } from "next/server";
+import { ProjectService } from "@/services/project.service";
+
+export async function GET() {
+    try {
+        console.log("Fetching global stats...");
+        const stats = await ProjectService.getGlobalStats();
+        return NextResponse.json({ success: true, data: stats });
+    } catch (error: any) {
+        console.error("Stats API Route Error:", error);
+        return NextResponse.json({
+            success: false,
+            error: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        }, { status: 500 });
+    }
+}
+
+
+=================================================================
+--- FILE: src/app/api/supervisor/change-requests/route.ts ---
+=================================================================
+import { NextResponse } from "next/server";
+import { requireAuth } from "@/lib/session";
+import { ChangeRequestService } from "@/services/change-request.service";
+
+export async function GET(request: Request) {
+    try {
+        const user = await requireAuth();
+        if (user.role !== "supervisor") {
+            return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 403 });
+        }
+
+        const requests = await ChangeRequestService.getSupervisorRequests(user.id);
+        return NextResponse.json({ success: true, data: requests });
+    } catch (error: any) {
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    }
+}
+
+
+=================================================================
+--- FILE: src/app/api/supervisor/projects/route.ts ---
+=================================================================
+import { NextResponse } from "next/server";
+import { requireAuth } from "@/lib/session";
+import { ProjectService } from "@/services/project.service";
+
+export async function GET() {
+    try {
+        const user = await requireAuth();
+
+        if (user.role !== "supervisor") {
+            return NextResponse.json({ success: false, error: "Only supervisors can access this endpoint" }, { status: 403 });
+        }
+
+        const projects = await ProjectService.getSupervisorProjects(user.id);
+        return NextResponse.json({ success: true, data: projects });
+
+    } catch (error: any) {
+        console.error("Supervisor projects fetch error:", error);
+        if (error.message === "Unauthorized") {
+            return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+        }
+        return NextResponse.json({ success: false, error: "An unexpected error occurred." }, { status: 500 });
+    }
+}
+
+
+=================================================================
+--- FILE: src/app/api/supervisors/route.ts ---
+=================================================================
+import { NextResponse } from "next/server";
+import { supabase } from "@/lib/supabase";
+
+export async function GET(request: Request) {
+    const { searchParams } = new URL(request.url);
+    const departmentId = searchParams.get("department_id");
+
+    try {
+        console.log("Supervisor API called (Fetching all verified supervisors)");
+
+        let query = supabase
+            .from("users")
+            .select("id, full_name, display_name, degrees, departments(name)")
+            .eq("role", "supervisor")
+            .eq("is_active", true)
+            .eq("is_verified", true);
+
+        const { data, error } = await query.order("full_name");
+
+        if (error) {
+            throw error;
+        }
+
+        console.log(`Found ${data?.length || 0} supervisors`);
+
+        return NextResponse.json({ success: true, data }, { status: 200 });
+
+    } catch (error: any) {
+        console.error("Failed to fetch supervisors:", error);
+        return NextResponse.json(
+            { success: false, error: "Failed to fetch supervisors" },
+            { status: 500 }
+        );
+    }
+}
+
+
+=================================================================
+--- FILE: src/app/api/users/[id]/route.ts ---
+=================================================================
+import { NextResponse } from "next/server";
+import { UserService } from "@/services/user.service";
+import { requireAuth } from "@/lib/session";
+import { profileUpdateSchema } from "@/schemas";
+
+export async function GET(
+    request: Request,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        const { id } = await params;
+        const user = await UserService.getProfileById(id);
+
+        if (!user) {
+            return NextResponse.json(
+                { success: false, error: "User not found." },
+                { status: 404 }
+            );
+        }
+
+        // Exclude password hashes or sensitive fields. (Our DB returns the hash if requested via '*' so we must manually scrub)
+        const { password_hash, ...safeUser } = user as any;
+
+        return NextResponse.json({ success: true, data: safeUser }, { status: 200 });
+    } catch (error: any) {
+        console.error("Fetch profile error:", error);
+        return NextResponse.json(
+            { success: false, error: "Failed to fetch profile." },
+            { status: 500 }
+        );
+    }
+}
+
+export async function PATCH(
+    request: Request,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        // 1. Authenticate Request
+        const sessionUser = await requireAuth();
+        const { id } = await params;
+
+        // 2. Authorization check: Only the owning user can edit their own profile
+        if (sessionUser.id !== id && sessionUser.role !== "admin") {
+            return NextResponse.json(
+                { success: false, error: "Forbidden. You can only update your own profile." },
+                { status: 403 }
+            );
+        }
+
+        // 3. Validation
+        const body = await request.json();
+        const validation = profileUpdateSchema.safeParse(body);
+
+        if (!validation.success) {
+            return NextResponse.json(
+                { success: false, error: "Validation failed", details: validation.error.flatten().fieldErrors },
+                { status: 400 }
+            );
+        }
+
+        // 4. Update
+        const updatedUser = await UserService.updateProfile(id, validation.data);
+
+        // Filter sensitive info
+        const { password_hash, ...safeUser } = updatedUser as any;
+
+        return NextResponse.json({ success: true, data: safeUser }, { status: 200 });
+
+    } catch (error: any) {
+        console.error("Update profile error:", error);
+
+        if (error.message === "Unauthorized") {
+            return NextResponse.json(
+                { success: false, error: "Unauthorized" },
+                { status: 401 }
+            );
+        }
+
+        return NextResponse.json(
+            { success: false, error: error.message || "An unexpected error occurred." },
+            { status: 500 }
+        );
+    }
+}
