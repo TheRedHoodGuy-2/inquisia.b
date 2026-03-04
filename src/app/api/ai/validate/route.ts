@@ -68,11 +68,12 @@ export async function POST(request: Request) {
             );
         }
 
-        // Parse PDF — require() inside function body to avoid ESM top-level crash on Vercel.
-        // Uses the same proven detection logic as projects/route.ts.
-        let pdfText = "";
+        // Prioritize pre-extracted PDF text from the client if provided
+        let pdfText = formData.get("pdfText") as string || "";
         let pdfParseError: string | undefined;
-        if (file) {
+
+        // Only try server-side parsing if the client-side extraction failed or wasn't provided
+        if (!pdfText && file) {
             try {
                 // eslint-disable-next-line @typescript-eslint/no-require-imports
                 const pdfParse = require("pdf-parse");
